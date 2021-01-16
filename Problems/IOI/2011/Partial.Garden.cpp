@@ -1,47 +1,71 @@
 #include <bits/stdc++.h>
 #include "garden.h"
 #include "gardenlib.h"
-#define fi first
-#define se second
-#define maxn 1000
+#define maxk 30
+#define maxn 150003
 #define pb push_back
 using namespace std;
-typedef pair<int,int> pi;
 
-int n,p;
-vector<pi> adj[maxn];
+int n;
+int dp[maxn][2][maxk][2];
+vector<int> adj[maxn];
 
-bool dfs(int u , int last , int rem) {
-	if(rem == 0)
-		return (u == p);
-	int deg = adj[u].size();
-	bool ok = false;
-	if(deg == 1)
-		ok = dfs(adj[u][0].fi,adj[u][0].se,rem-1);
-	else {
-		if(last != adj[u][0].se)
-			ok = dfs(adj[u][0].fi,adj[u][0].se,rem-1);
+void precalc() {
+	memset(dp,-1,sizeof(dp));
+	for( int u = 0 ; u < n ; u++ ) {
+		int v = adj[u][0];
+		dp[u][1][0][0] = v;
+		if(adj[v].size() == 1)
+			dp[u][1][0][1] = 1;
 		else
-			ok = dfs(adj[u][1].fi,adj[u][1].se,rem-1);
+			dp[u][1][0][1] = (adj[v][0] != u);
+		if(adj[u].size() == 2) {
+			v = adj[u][1];
+			dp[u][0][0][0] = v;
+			if(adj[v].size() == 1)
+				dp[u][0][0][1] = 1;
+			else
+				dp[u][0][0][1] = (adj[v][0] != u);
+		}
 	}
-	return ok;
+	for( int k = 1 ; k < maxk ; k++ )
+		for( int u = 0 ; u < n ; u++ )
+			for( int st = 0 ; st < 2 ; st++ )
+				if(dp[u][st][k-1][0] != -1) {
+					int v = dp[u][st][k-1][0];
+					int st2 = dp[u][st][k-1][1];
+					dp[u][st][k][0] = dp[v][st2][k-1][0];
+					dp[u][st][k][1] = dp[v][st2][k-1][1];
+				}
 }
 
-void count_routes(int N, int m, int P, int e[][2], int q, int dist[]) {
+int solve(int u , int d) {
+	int st = 1;
+	for( int i = maxk-1 ; i >= 0 ; i-- )
+		if(d & (1<<i)) {
+			int v = dp[u][st][i][0];
+			int stv = dp[u][st][i][1];
+			u = v;
+			st = stv;
+		}
+	return u;
+}
+
+void count_routes(int N, int m, int p, int e[][2], int q, int dist[]) {
 	n = N;
-	p = P;
 	for( int i = 0 ; i < m ; i++ ) {
 		int u = e[i][0];
 		int v = e[i][1];
 		if(adj[u].size() < 2)
-			adj[u].pb(pi(v,i));
+			adj[u].pb(v);
 		if(adj[v].size() < 2)
-			adj[v].pb(pi(u,i));
+			adj[v].pb(u);
 	}
+	precalc();
 	for( int tc = 0 ; tc < q ; tc++ ) {
 		int d = dist[tc] , ans = 0;
 		for( int i = 0 ; i < n ; i++ )
-			ans += dfs(i,-1,d);
+			ans += (solve(i,d) == p);
 		answer(ans);
 	}
 }
