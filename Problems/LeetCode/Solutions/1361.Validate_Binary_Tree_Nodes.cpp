@@ -1,25 +1,39 @@
 class Solution {
 public:
-    bool validateBinaryTreeNodes(int n, vector<int>& l, vector<int>& r) {
-        vector<int> cntPar(n,0);
-        vector<int> cntPar2(2,0);
-        for( int i = 0 ; i < n ; i++ ) {
-            if(l[i] == r[i] && l[i] != -1)
-                return false;
-            if(l[i] != -1)
-                cntPar[l[i]]++;
-            if(r[i] != -1)
-                cntPar[r[i]]++;
-        }
-        for( int i = 0 ; i < n ; i++ ) {
-            if(cntPar[i] == 0 && l[i] == -1 && r[i] == -1 && n > 1)
-                return false;
-            if(cntPar[i] >= 2)
-                return false;
-            cntPar2[cntPar[i]]++;
-        }
-        if(cntPar2[0] != 1 || cntPar2[1] != n-1)
+    bool dfs(int u , int& cnt , vector<int>& l , vector<int>& r , vector<bool>& mark) {
+        if(mark[u])
+            return false;
+        cnt++;
+        mark[u] = true;
+        if(l[u] != -1 and !dfs(l[u],cnt,l,r,mark))
+            return false;
+        if(r[u] != -1 and !dfs(r[u],cnt,l,r,mark))
             return false;
         return true;
+    }
+    bool validateBinaryTreeNodes(int n, vector<int>& l, vector<int>& r) {
+        vector<int> cnt_dad(n,0);
+        for(int x : l)
+            if(x != -1)
+                cnt_dad[x] += 1;
+        for(int x : r)
+            if(x != -1)
+                cnt_dad[x] += 1;
+        int root = -1;
+        for( int i = 0 ; i < n ; i++ )
+            if(cnt_dad[i] == 0) {
+                if(root != -1)
+                    return false;
+                root = i;
+            }
+            else if(cnt_dad[i] == 2)
+                return false;
+        if(root == -1)
+            return false;
+        int cnt = 0;
+        vector<bool> mark(n,false);
+        if(!dfs(root,cnt,l,r,mark))
+            return false;
+        return cnt == n;
     }
 };
